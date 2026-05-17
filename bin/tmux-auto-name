@@ -90,11 +90,15 @@ EOF
 process_window() {
   local target="$1" current="$2" cmd="$3" path="$4" title="$5"
 
-  if [[ "$RENAME_ALL" != "1" && ! "$current" =~ $DEFAULT_NAME_RE ]]; then
-    # User manually named this window or an AI-coder name we already set.
-    # Heuristic: an existing AI-coder name contains a colon ("repo: task") -
-    # we DO want to keep refreshing those, so allow if it contains ":".
-    [[ "$current" == *:* ]] || return 0
+  if [[ "$RENAME_ALL" != "1" ]]; then
+    # Three "this isn't a user-chosen name" signals; any one is enough.
+    local is_default=0
+    [[ "$current" =~ $DEFAULT_NAME_RE ]] && is_default=1
+    # tmux auto-renames windows after the current command; treat that as default.
+    [[ -n "$cmd" && "$current" == "$cmd" ]] && is_default=1
+    # Names we previously set ("repo: task") - keep refreshing those.
+    [[ "$current" == *:* ]] && is_default=1
+    [[ "$is_default" == "0" ]] && return 0
   fi
 
   local content
